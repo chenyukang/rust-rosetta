@@ -19,7 +19,6 @@ fn find_max(lst: &Vec<f32>) -> Option<f32> {
 fn with_bits(val: f32, digits: uint) -> f32 {
     let num = std::f64::to_str_digits(val as f64, digits);
     let res = FromStrRadix::from_str_radix(num.as_slice(), 10).unwrap();
-    println!("res: {}", res);
     res
 }
 
@@ -55,19 +54,18 @@ fn all_sums(vec: &Vec<f32>) -> Vec<f32> {
     res
 }
 
-fn test_kahansum() {
-    let v = vec![10000.0f32, 3.14159, 2.71828];
-    let sums = all_sums(&v);
-    let res = kahan_sum(&v);
-    println!("sum: {}", sums);
-    println!("res: {}", res);
-    println!("max: {}", find_max(&sums));
-    assert!(find_max(&sums), Some(res));
-}
 
 fn main() {
     let v = vec![1.0f32, 2.0, 3.0];
     let res = find_max(&v);
     assert!(res == Some(3.0f32));
     test_kahansum();
+}
+
+fn test_kahansum() {
+    let v = vec![10000.0f32, 3.14159, 2.71828];
+    let sums = all_sums(&v);
+    let res = kahan_sum(&v);
+    let max = find_max(&sum).unwrap();
+    assert!(max, res);
 }
