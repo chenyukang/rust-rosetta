@@ -62,6 +62,7 @@ fn test_kahansum() {
     println!("sum: {}", sums);
     println!("res: {}", res);
     println!("max: {}", find_max(&sums));
+    assert!(find_max(&sums), Some(res));
 }
 
 fn main() {
