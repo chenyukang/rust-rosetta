@@ -33,14 +33,20 @@ authors = [
     "Rupert Lane, https://github.com/rupertl",
     "Joshua Skootsky, https://github.com/JoshuaSkootsky",
     "James Hurst, https://github.com/jamesrhurst",
-    "Yukang Chen, https://github.com/chenyukang"
+    "Yukang Chen, https://github.com/chenyukang",
+    "Rootul Patel, https://github.com/rootulp",
+    "Frank McSherry, http://github.com/frankmcsherry",
+    "Bartosz Marcinkowski, https://github.com/bm371613",
+    "Makoto Nakashima, https://github.com/gifnksm"
 ]
 
-[dependencies.num]
-git = "https://github.com/rust-lang/num"
-
-[dependencies.time]
-git = "https://github.com/rust-lang/time"
+[dependencies]
+collect = "*"
+num = "*"
+regex = "*"
+regex_macros = "*"
+time = "*"
+rustc-serialize = "*"
 
 [lib]
 # used by compile_time_calculation.rs
@@ -230,7 +236,6 @@ path = "src/bulls_and_cows.rs"
 # http://rosettacode.org/wiki/Call_a_foreign-language_function
 name = "call_foreign_function"
 path = "src/call_foreign_function.rs"
-test = false
 
 [[bin]]
 # http://rosettacode.org/wiki/Apply_a_callback_to_an_array
@@ -263,12 +268,17 @@ path = "src/closest-pair.rs"
 # http://rosettacode.org/wiki/Closures/Value_capture
 name = "closures-value_capture"
 path = "src/closures-value_capture.rs"
-test = false
 
 [[bin]]
 # http://rosettacode.org/wiki/Comma_quibbling
 name = "comma_quibbling"
 path = "src/comma_quibbling.rs"
+
+[[bin]]
+# http://rosettacode.org/wiki/Command-line_arguments
+name = "command_line_arguments"
+path = "src/command_line_args.rs"
+test = false
 
 [[bin]]
 # http://rosettacode.org/wiki/Compile-time_calculation
@@ -292,6 +302,11 @@ test = false
 name = "count_in_octal"
 path = "src/count_in_octal.rs"
 test = false
+
+[[bin]]
+# http://rosettacode.org/wiki/Sorting_algorithms/Counting_sort
+name = "counting_sort"
+path = "src/counting_sort.rs"
 
 [[bin]]
 # http://rosettacode.org/wiki/CRC-32
@@ -336,6 +351,12 @@ name = "entropy"
 path = "src/entropy.rs"
 
 [[bin]]
+# http://rosettacode.org/wiki/Enumerations
+name = "enumerations"
+path = "src/enumerations.rs"
+test = false
+
+[[bin]]
 # http://rosettacode.org/wiki/Equilibrium_index
 name = "equilibrium_index"
 path = "src/equilibrium_index.rs"
@@ -369,6 +390,11 @@ path = "src/fast_fourier_transform.rs"
 # http://rosettacode.org/wiki/Fibonacci_sequence
 name = "fibonacci"
 path = "src/fibonacci.rs"
+
+[[bin]]
+# http://rosettacode.org/wiki/Fibonacci_n-step_number_sequences
+name = "fibonacci_n-step_number_sequences"
+path = "src/fibonacci_n-step_number_sequences.rs"
 
 [[bin]]
 # http://rosettacode.org/wiki/Fibonacci_word
@@ -470,6 +496,7 @@ test = false
 # http://rosettacode.org/wiki/Hough_transform
 name = "hough_transform"
 path = "src/hough_transform.rs"
+test = false
 
 [[bin]]
 # http://rosettacode.org/wiki/HTTP
@@ -516,6 +543,11 @@ name = "isaac"
 path = "src/isaac.rs"
 
 [[bin]]
+# http://rosettacode.org/wiki/Josephus_problem
+name = "josephus_problem"
+path = "src/josephus_problem.rs"
+
+[[bin]]
 # http://rosettacode.org/wiki/JSON
 name = "json"
 path = "src/json.rs"
@@ -524,6 +556,11 @@ path = "src/json.rs"
 # http://rosettacode.org/wiki/K-d_tree
 name = "k-d-tree"
 path = "src/k-d-tree.rs"
+
+[[bin]]
+# http://rosettacode.org/wiki/Kahan_summation
+name = "kahansum"
+path = "src/kahansum.rs"
 
 [[bin]]
 # http://rosettacode.org/wiki/Knapsack_problem/0-1
@@ -610,6 +647,11 @@ name = "md5-implementation"
 path = "src/md5-implementation.rs"
 
 [[bin]]
+# http://rosettacode.org/wiki/Menu
+name = "menu"
+path = "src/menu.rs"
+
+[[bin]]
 # http://rosettacode.org/wiki/Sorting_algorithms/Merge_sort
 name = "merge-sort"
 path = "src/merge-sort.rs"
@@ -669,6 +711,11 @@ path = "src/pascals_triangle.rs"
 # http://rosettacode.org/wiki/Perfect_numbers
 name = "perfect_numbers"
 path = "src/perfect_numbers.rs"
+
+[[bin]]
+# http://rosettacode.org/wiki/Permutations_with_repetitions
+name = "permutations_with_repetitions"
+path = "src/permutations_with_repetitions.rs"
 
 [[bin]]
 # http://rosettacode.org/wiki/Pernicious_numbers
@@ -850,6 +897,11 @@ name = "strip_comments_from_a_string"
 path = "src/strip_comments_from_a_string.rs"
 
 [[bin]]
+# http://rosettacode.org/wiki/Sudoku
+name = "sudoku"
+path = "src/sudoku.rs"
+
+[[bin]]
 # http://rosettacode.org/wiki/Sum_digits_of_an_integer
 name = "sum_digits"
 path = "src/sum_digits.rs"
@@ -909,9 +961,3 @@ path = "src/write_ppm.rs"
 # http://rosettacode.org/wiki/Zig-zag_matrix
 name = "zig-zag_matrix"
 path = "src/zig-zag_matrix.rs"
-
-
-[[bin]]
-# http://rosettacode.org/wiki/Zig-zag_matrix
-name = "kahansum"
-path = "src/kahansum.rs"

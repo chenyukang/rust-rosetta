@@ -1,7 +1,11 @@
 // Implements http://rosettacode.org/wiki/Hello_world/Web_server
+#![allow(unstable)]
 
 use std::io::net::tcp::{TcpAcceptor, TcpListener, TcpStream};
 use std::io::{Acceptor, Listener, IoResult};
+use std::thread::Thread;
+
+#[cfg(not(test))] use std::os;
 
 fn handle_client(mut stream: TcpStream) -> IoResult<()> {
     let response =
@@ -24,42 +28,47 @@ charset=UTF-8
 </html>";
 
     try!(stream.write(response));
-    let _ = stream.close_write();
-    Ok(())
+    stream.close_write()
 }
 
-pub fn handle_server(ip: &'static str, port: u16) -> IoResult<TcpAcceptor> {
+pub fn handle_server(ip: &str, port: u16) -> IoResult<TcpAcceptor> {
     let listener = try!(TcpListener::bind((ip, port)));
-
     let mut acceptor = listener.listen();
     println!("Listening for connections on port {}", port);
 
-    let acceptor_ = acceptor.clone();
-    spawn(proc() {
+    let handle = acceptor.clone();
+    Thread::spawn(move || -> () {
         for stream in acceptor.incoming() {
             match stream {
-                Ok(s) => spawn(proc() {
-                    match handle_client(s) {
-                        Ok(_) => println!("Response sent!"),
-                        Err(e) => println!("Failed sending response: {}!", e),
-                    }
-                }),
+                Ok(s) => {
+                    Thread::spawn(move || {
+                        match handle_client(s) {
+                            Ok(_) => println!("Response sent!"),
+                            Err(e) => println!("Failed sending response: {}!", e),
+                        }
+                    });
+                },
                 Err(e) => {
                     println!("No longer accepting new requests: {}", e);
                     break
                 }
             }
         }
-        // close the socket server
-        drop(acceptor);
     });
-    acceptor_
+
+    handle
 }
 
 #[cfg(not(test))]
 fn main() {
-    const HOST: &'static str = "127.0.0.1";
-    const PORT: u16 = 80;
-    let acceptor = handle_server(HOST, PORT).unwrap();
-    drop(acceptor);
+    let args = os::args();
+
+    let host = "127.0.0.1";
+    let port = if args.len() == 2 {
+        args[1].parse::<u16>().expect(&*format!("Usage: {} <port>", args[0]))
+    } else {
+        80
+    };
+
+    handle_server(host, port).unwrap();
 }

@@ -1,6 +1,6 @@
 // Implements http://rosettacode.org/wiki/Stack
-
-#[deriving(Show)]
+#![allow(unstable)]
+#[derive(Show)]
 struct Stack<T> {
     // We use a vector because of simplicity
     vec: Vec<T>
@@ -37,7 +37,7 @@ fn main() {
     let mut stack = Stack::new();
 
     // Fill the stack
-    stack.push(5i);
+    stack.push(5i32);
     stack.push(8);
     stack.push(9);
 
@@ -60,7 +60,7 @@ fn test_basic() {
     assert!(stack.empty());
 
     // Fill the stack
-    stack.push(5i);
+    stack.push(5i32);
     stack.push(8);
     stack.push(9);
 

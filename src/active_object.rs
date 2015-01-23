@@ -1,11 +1,15 @@
 // Implements http://rosettacode.org/wiki/Active_object
+#![allow(unstable)]
 extern crate time;
 
-use std::num::{Float, FloatMath};
+use std::num::Float;
 use std::f64::consts::PI;
 use std::io::timer::Timer;
 use std::sync::{Arc, Mutex};
 use std::time::duration::Duration;
+use std::thread::Thread;
+use std::sync::mpsc::{channel, Sender, SendError};
+use std::ops::Mul;
 
 // Rust supports both shared-memory and actor models of concurrency, and the Integrator utilizes
 // both.  We use a Sender (actor model) to send the Integrator new functions, while we use a Mutex
@@ -16,8 +20,8 @@ use std::time::duration::Duration;
 // might look like a good situation for a RwLock--after all, there's no reason for a read in the
 // main task to block writes.  Unfortunately, unless you have significantly more reads than
 // writes (which is certainly not the case here), a Mutex will usually outperform a RwLock.
-pub struct Integrator<S, T> {
-    input: Sender<|i64|: Send -> S>,
+pub struct Integrator<S: 'static, T> {
+    input: Sender<Box<Fn(i64) -> S + Send>>,
     output: Arc<Mutex<T>>,
 }
 
@@ -28,7 +32,7 @@ pub struct Integrator<S, T> {
 // function being integrated) must yield T (the type of the integrated value) when multiplied by
 // f64.  We could possibly replace f64 with a generic as well, but it would make things a bit more
 // complex.
-impl<S: Mul<f64, T> + Float,
+impl<S: Mul<f64, Output=T> + Float,
      T: Clone + Send + Float> Integrator<S, T> {
     pub fn new(frequency: Duration) -> Integrator<S, T> {
         // We create a pipe allowing functions to be sent from tx (the sending end) to input (the
@@ -48,7 +52,7 @@ impl<S: Mul<f64, T> + Float,
             // becomes inaccessible to the outside world.
             output: s.clone(),
         };
-        spawn(proc() {
+        Thread::spawn(move || -> () {
             // There is a reasonable argument for failure on failure to initialize the Timer, but
             // it's essentially certain that if we return from the spawn this early main will
             // detect that something is amiss.
@@ -64,18 +68,18 @@ impl<S: Mul<f64, T> + Float,
             let periodic = timer.periodic(frequency);
             let frequency_ms = frequency.num_milliseconds();
             let mut t = 0;
-            let mut k = |_| Float::zero();
+            let mut k: Box<Fn(i64) -> S + Send> = Box::new(|&: _| Float::zero());
             let mut k_0: S = Float::zero();
             loop {
                 // Here's the selection we talked about above.  Note that we are careful to call
-                // the *non*-failing function, recv_opt(), here.  The reason we do this is because
-                // recv_opt() will return Err when the sending end of a channel is dropped.  While
+                // the *non*-failing function, recv(), here.  The reason we do this is because
+                // recv() will return Err when the sending end of a channel is dropped.  While
                 // this is unlikely to happen for the timer (so again, you could argue for failure
                 // there), it's normal behavior for the sending end of input to be dropped, since
                 // it just happens when the Integrator falls out of scope.  So we handle it cleanly
                 // and break out of the loop, rather than failing.
                 select! {
-                    res = periodic.recv_opt() => match res {
+                    res = periodic.recv() => match res {
                         Ok(_) => {
                             t += frequency_ms;
                             let k_1: S = k(t);
@@ -93,13 +97,13 @@ impl<S: Mul<f64, T> + Float,
                             // so it's impossible to access the data incorrectly.  There are some
                             // additional subtleties around the actual implementation, but that's
                             // the basic idea.
-                            let mut s = s.lock();
+                            let mut s = s.lock().unwrap();
                             *s = *s + (k_1 + k_0) * (frequency_ms as f64 / 2.);
                             k_0 = k_1;
                         }
                         Err(_) => break,
                     },
-                    res = input.recv_opt() => match res {
+                    res = input.recv() => match res {
                         Ok(k_new) => k = k_new,
                         Err(_) => break,
                     }
@@ -109,10 +113,10 @@ impl<S: Mul<f64, T> + Float,
         integrator
     }
 
-    pub fn input(&self, k: |i64|: Send -> S) -> Result<(), |i64|: Send -> S> {
+    pub fn input(&self, k: Box<Fn(i64) -> S + Send>) -> Result<(), SendError< Box<Fn(i64) -> S + Send>>> {
         // The meat of the work is done in the other thread, so to set the input we just send along
         // the Sender we set earlier...
-        self.input.send_opt(k)
+        self.input.send(k)
     }
 
     pub fn output(&self) -> T {
@@ -121,7 +125,7 @@ impl<S: Mul<f64, T> + Float,
         // retain access to the interior of the Mutex unless we have possession of its lock.  There
         // are ways and circumstances in which one can avoid this (e.g. by using atomic types) but
         // clone() is a perfectly reasonable solution as well, and a lot easier to reason about :)
-        self.output.lock().clone()
+        self.output.lock().unwrap().clone()
     }
 }
 
@@ -131,12 +135,12 @@ impl<S: Mul<f64, T> + Float,
 fn integrate() -> f64 {
     let object = Integrator::new(Duration::milliseconds(10));
     let mut timer = Timer::new().unwrap();
-    object.input(|t| {
+    object.input(Box::new(|&: t: i64| {
         let f = 1. / Duration::seconds(2).num_milliseconds() as f64;
         (2. * PI * f * t as f64).sin()
-    }).ok().expect("Failed to set input");
+    })).ok().expect("Failed to set input");
     timer.sleep(Duration::seconds(2));
-    object.input(|_| 0.).ok().expect("Failed to set input");
+    object.input(Box::new(|&:_| 0.)).ok().expect("Failed to set input");
     timer.sleep(Duration::seconds(1) / 2);
     object.output()
 }
@@ -154,12 +158,12 @@ fn solution() {
     // FIXME(pythonesque): When unboxed closures are fixed, fix integrate() to take two arguments.
     let object = Integrator::new(Duration::milliseconds(10));
     let mut timer = Timer::new().unwrap();
-    object.input(|t| {
+    object.input(Box::new(|&: t: i64| {
         let f = 1. / (Duration::seconds(2) / 10).num_milliseconds() as f64;
         (2. * PI * f * t as f64).sin()
-    }).ok().expect("Failed to set input");
+    })).ok().expect("Failed to set input");
     timer.sleep(Duration::seconds(2) / 10);
-    object.input(|_| 0.).ok().expect("Failed to set input");
+    object.input(Box::new(|&: _| 0.)).ok().expect("Failed to set input");
     timer.sleep(Duration::seconds(1) / 10);
     assert_eq!(object.output() as i64, 0)
 }

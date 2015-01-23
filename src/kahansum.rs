@@ -1,24 +1,21 @@
 // Implements http://rosettacode.org/wiki/Kahan_summation
+#![allow(unstable)]
+use std::num::Float;
+use std::f32;
 
-fn find_max(lst: &Vec<f32>) -> Option<f32> {
-    let mut max = None;
-    for i in lst.iter() {
-        max = match max {
-            None => Some(*i),
-            Some(m) if *i > m => Some(*i),
-            _ => max
-        }
-    }
-    max
+fn find_max(lst: &[f32]) -> Option<f32> {
+    if lst.is_empty() { return None }
+    let max = lst.iter().fold(f32::NEG_INFINITY,
+                              |a, &b| Float::max(a, b));
+    Some(max)
 }
 
-fn with_bits(val: f32, digits: uint) -> f32 {
+fn with_bits(val: f32, digits: usize) -> f32 {
     let num = std::f32::to_str_digits(val, digits);
-    let res: f32 = from_str(num.as_slice()).unwrap();
-    res
+    num.parse::<f32>().unwrap()
 }
 
-fn kahan_sum(lst: &Vec<f32>) -> Option<f32> {
+fn kahan_sum(lst: &[f32]) -> Option<f32> {
     let mut sum = 0.0f32;
     let mut c = 0.0f32;
     for i in lst.iter() {
@@ -31,7 +28,7 @@ fn kahan_sum(lst: &Vec<f32>) -> Option<f32> {
 }
 
 
-fn all_sums(vec: &Vec<f32>) -> Vec<f32> {
+fn all_sums(vec: &[f32]) -> Vec<f32> {
     let mut res = Vec::new();
     let mut perms = vec.permutations();
     loop {
@@ -52,19 +49,19 @@ fn all_sums(vec: &Vec<f32>) -> Vec<f32> {
 
 #[cfg(not(test))]
 fn main() {
-    let v = vec![10000.0f32, 3.14159, 2.71828];
+    let v = [10000.0f32, 3.14159, 2.71828];
     let sums = all_sums(&v);
     let res = kahan_sum(&v).unwrap();
-    let max = find_max(&sums).unwrap();
+    let max = find_max(&sums[]).unwrap();
     println!("max: {} res: {}", max, res);
 }
 
 #[test]
 fn test_kahansum() {
-    let v = vec![10000.0f32, 3.14159, 2.71828];
+    let v = [10000.0f32, 3.14159, 2.71828];
     let sums = all_sums(&v);
     let res = kahan_sum(&v).unwrap();
-    let max = find_max(&sums).unwrap();
+    let max = find_max(&sums[]).unwrap();
     assert!(max < res);
 }
 

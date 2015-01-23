@@ -1,8 +1,7 @@
 // Implements http://rosettacode.org/wiki/Write_ppm_file
+#![allow(unstable)]
 use std::io::{File, BufferedWriter, IoResult};
 use bitmap::Image;
-#[cfg(not(test))]
-use bitmap::Color;
 mod bitmap;
 
 trait PPMWritable {
@@ -14,7 +13,7 @@ impl PPMWritable for Image {
         let file = File::create(&Path::new(filename));
         let mut writer = BufferedWriter::new(file);
         try!(writer.write_line("P6"));
-        try!(write!(&mut writer, "{} {} {}\n", self.width, self.height, 255u));
+        try!(write!(&mut writer, "{} {} {}\n", self.width, self.height, 255us));
         for color in self.data.iter() {
             for channel in [color.red, color.green, color.blue].iter() {
                 try!(writer.write_u8(*channel));
@@ -26,12 +25,14 @@ impl PPMWritable for Image {
 
 #[cfg(not(test))]
 pub fn main() {
+    use bitmap::Color;
+
     // write a PPM image, the left side of which is red, and the right side
     // of which is blue
     let mut image = Image::new(64, 64);
     image.fill(Color { red: 255, green: 0, blue: 0 });
-    for y in range(0u, 64) {
-        for x in range(32u, 64) {
+    for y in (0us..64) {
+        for x in (32us..64) {
             image[(x, y)] = Color { red: 0, green: 0, blue: 255 };
         }
     }
@@ -51,7 +52,7 @@ mod test {
         let mut image = Image::new(2,1);
         image[(0, 0)] = Color { red: 1, green: 2, blue: 3 };
         image[(1, 0)] = Color { red: 4, green: 5, blue: 6 };
-        let fname = format!("{}/test-{}.ppm", os::tmpdir().as_str().unwrap(), rand::task_rng().gen::<int>());
+        let fname = format!("{}/test-{}.ppm", os::tmpdir().as_str().unwrap(), rand::thread_rng().gen::<i32>());
         // Can't use try! macro because we want to panic, not return.
         match image.write_ppm(fname.as_slice()) {
             Ok(_) => {},

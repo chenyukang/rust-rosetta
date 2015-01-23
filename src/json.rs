@@ -1,10 +1,10 @@
 // Implements http://rosettacode.org/wiki/JSON
+#![allow(unstable)]
 
-extern crate serialize;
+extern crate "rustc-serialize" as rustc_serialize;
+use rustc_serialize::json;
 
-use serialize::json;
-
-#[deriving(Show, Encodable, Decodable, PartialEq, Eq)]
+#[derive(Show, RustcEncodable, RustcDecodable, PartialEq, Eq)]
 pub struct Contact {
     name: String,
     city: String
@@ -20,7 +20,7 @@ fn main() {
     // Decode json to contact
     let json_str = "{\"name\":\"Alan\", \"city\":\"Tokyo\"}";
     let contact: Contact = json::decode(json_str).unwrap();
-    println!("Decoded: {}", contact);
+    println!("Decoded: {:?}", contact);
 }
 
 #[test]

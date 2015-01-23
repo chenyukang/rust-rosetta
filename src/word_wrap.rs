@@ -1,21 +1,20 @@
 // http://rosettacode.org/wiki/Word_wrap
-
+#![allow(unstable)]
 // Using the minimum length greedy algorithm
 // http://en.wikipedia.org/wiki/Word_wrap#Minimum_length
 
 // Implemented as a lazy String iterator, returning a wrapped line each time
-
 use std::str::Words;
 use std::mem::swap;
 
 pub struct WordWrap<'a> {
     words: Words<'a>,
-    line_length: uint,
+    line_length: usize,
     next_line: String
 }
 
 impl<'a> WordWrap<'a> {
-    fn new(text: &'a str, line_length: uint) -> WordWrap {
+    fn new(text: &'a str, line_length: usize) -> WordWrap {
         WordWrap {
             words : text.words(),
             line_length : line_length,
@@ -24,18 +23,20 @@ impl<'a> WordWrap<'a> {
     }
 }
 
-impl<'a> Iterator<String> for WordWrap<'a> {
+impl<'a> Iterator for WordWrap<'a> {
+    type Item = String;
+
     fn next(&mut self) -> Option<String> {
         // Move anything left over from last run to this_line
         let mut this_line = String::new();
         swap(&mut self.next_line, &mut this_line);
 
-        let mut space_left = self.line_length - this_line.as_slice().char_len();
-        const SPACE_WIDTH: uint = 1;
+        let mut space_left = self.line_length - this_line.chars().count();
+        const SPACE_WIDTH: usize = 1;
 
         // Loop, adding words until we run out of words or hit the line length
         for word in self.words {
-            let word_length = word.char_len();
+            let word_length = word.chars().count();
 
             // If not the first word for this line
             if space_left != self.line_length {
@@ -73,14 +74,13 @@ fn main () {
          took a golden ball, and threw it up on high and caught it, and this \
          ball was her favorite plaything.";
 
-    for &length in [72u, 80u].iter() {
+    for length in 72..81 {
         println!("Text wrapped at {}", length);
         for line in WordWrap::new(text, length) {
             println!("{}", line);
         }
         println!("");
     }
-
 }
 
 #[test]

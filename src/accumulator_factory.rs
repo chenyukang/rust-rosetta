@@ -1,23 +1,9 @@
-#![feature(unboxed_closures, macro_rules)]
-pub struct G<T, U> {
-    n: T,
-}
+use std::ops::Add;
 
-macro_rules! add_impl(
-    ($($t:ty)*) => ($(
-        impl FnMut<($t,), $t> for G<$t, $t> {
-            extern "rust-call" fn call_mut(&mut self, (i,):($t,)) -> $t {
-                self.n = self.n + i;
-                self.n
-            }
-        }
-    )*)
-)
-
-add_impl!(uint u8 u16 u32 u64 int i8 i16 i32 i64 f32 f64)
-
-pub fn accum<T: Add<T, U>, U>(n: T) -> G<T, U> {
-    G { n: n }
+pub fn accum<'a, T>(mut n: T) -> Box<FnMut(T) -> T + 'a> 
+    where T: 'a + Add<T, Output=T> + Copy
+{
+    Box::new(move |&mut: i: T| { n = n + i; n })
 }
 
 #[cfg(not(test))]

@@ -1,23 +1,26 @@
 // Implements http://rosettacode.org/wiki/24_game
 // Uses RPN expression
+#![allow(unstable)]
 
 #[cfg(not(test))]
 fn main() {
-    use std::rand::{task_rng, Rng};
+    use std::rand::{thread_rng, Rng};
     use std::io;
 
-    let mut rng = task_rng();
+    let mut rng = thread_rng();
     let mut reader = io::stdin();
 
     // generating 4 numbers
-    let choices = Vec::from_fn(5, |_| rng.gen_range(1u, 10));
+    let choices: Vec<usize> = (0us..4).map(
+		|_| rng.gen_range(1us, 10)
+    ).collect();
     println!("Make 24 with the following numbers");
 
     // start the game loop
     loop {
         print!("Your numbers: {}, {}, {}, {}\n", choices[0], choices[1], choices[2], choices[3]);
         let expr = reader.read_line().ok().expect("Failed to read line!");
-        match check_input(expr.as_slice(), &choices) {
+        match check_input(&expr[], &choices[]) {
             Ok(()) => { println!("Good job!"); break; },
             Err(e) => println!("{}", e)
         }
@@ -27,8 +30,8 @@ fn main() {
     }
 }
 
-fn check_input(expr: &str, choices: &Vec<uint>) -> Result<(), String> {
-    let mut stack: Vec<uint> = Vec::new();
+fn check_input(expr: &str, choices: &[usize]) -> Result<(), String> {
+    let mut stack: Vec<usize> = Vec::new();
     for token in expr.words() {
         if is_operator(token) {
             let (a, b) = (stack.pop(), stack.pop());
@@ -37,8 +40,7 @@ fn check_input(expr: &str, choices: &Vec<uint>) -> Result<(), String> {
                 (_, _) => return Err("Not a valid RPN expression!".to_string())
             }
         } else {
-            let v: Option<uint> = from_str(token);
-            match v {
+            match token.parse::<usize>() {
                 Some(n) => {
                     // check if the number is valid
                     if !choices.contains(&n) {
@@ -64,7 +66,7 @@ fn check_input(expr: &str, choices: &Vec<uint>) -> Result<(), String> {
     }
 }
 
-fn evaluate(a: uint, b: uint, op: &str) -> uint {
+fn evaluate(a: usize, b: usize, op: &str) -> usize {
     match op {
         "+" => a + b,
         "-" => a - b,
@@ -80,7 +82,7 @@ fn is_operator(op: &str) -> bool {
 
 #[test]
 fn test_check_input() {
-    let v1: Vec<uint> = vec![4, 3, 6, 2];
+    let v1 = [4us, 3, 6, 2];
 
     // correct result
     assert_eq!(check_input("4 3 * 6 2 * +", &v1), Ok(()));

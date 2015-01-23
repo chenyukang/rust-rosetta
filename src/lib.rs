@@ -1,10 +1,12 @@
 // Dummy main library
 // It also contains a test module, which checks if all source files are covered by `Cargo.toml`
-
-#![feature(phase, slicing_syntax)]
+#![allow(unstable)]
+#![feature(plugin)]
 
 extern crate regex;
-#[phase(plugin)] extern crate regex_macros;
+#[macro_use] 
+#[plugin]
+extern crate regex_macros;
 
 #[allow(dead_code)]
 #[cfg(not(test))]
@@ -14,7 +16,7 @@ fn main() { }
 mod test {
     use std::collections::HashSet;
     use std::io::BufferedReader;
-    use std::io::fs::{mod, File};
+    use std::io::fs::{self, File};
 
     // A test to check if all source files are covered by `Cargo.toml`
     #[test]
@@ -48,7 +50,11 @@ mod test {
         let regex = regex!("path = \"(.*)\"");
         reader.lines().filter_map(|l| {
             let l = l.unwrap();
-            regex.captures(l[]).map(|c| Path::new(c.at(1)).filename_str().unwrap().to_string())
+            regex.captures(&*l).map(|c| c.at(1).map(|s| Path::new(s))
+                                               .unwrap()
+                                               .filename_str()
+                                               .unwrap()
+                                               .to_string())
         }).collect()
     }
 

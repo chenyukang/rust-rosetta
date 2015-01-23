@@ -1,17 +1,19 @@
 // http://rosettacode.org/wiki/Knapsack_problem/0-1
 
 use std::cmp::max;
+use std::iter::repeat;
 
 // This struct is used to store our items that we want in our knap-sack.
 //
 // Show is for displaying the fields.
 // allow(dead_code) removes a dead code warning when the name of the struct is not
 // used (as in this case happens in the tests)
+#[derive(Copy)]
 struct Want<'a> {
     #[allow(dead_code)]
     name: &'a str,
-    weight: uint,
-    value: uint
+    weight: usize,
+    value: usize
 }
 
 // Global, immutable allocation of our items. This is so we can reference
@@ -44,16 +46,16 @@ const ITEMS: &'static [Want<'static>] = &[
 // This is a bottom-up dynamic programming solution to the 0-1 knap-sack problem.
 //      maximize value
 //      subject to weights <= max_weight
-fn knap_01_dp<'a>(xs: &[Want<'a>], max_weight: uint) -> Vec<Want<'a>> {
+fn knap_01_dp<'a>(xs: &[Want<'a>], max_weight: usize) -> Vec<Want<'a>> {
 
     // Save this value, so we don't have to make repeated calls.
     let xs_len = xs.len();
 
     // Imagine we wrote a recursive function(item, max_weight) that returns a
-    // uint corresponding to the maximum cumulative value by considering a
+    // usize corresponding to the maximum cumulative value by considering a
     // subset of items such that the combined weight <= max_weight.
     //
-    // fn best_value(item: uint, max_weight: uint) -> uint{
+    // fn best_value(item: usize, max_weight: usize) -> usize{
     //     if item == 0 {
     //         return 0;
     //     }
@@ -77,13 +79,14 @@ fn knap_01_dp<'a>(xs: &[Want<'a>], max_weight: uint) -> Vec<Want<'a>> {
     // In a similar vein, the top-down solution would be to memoize the
     // function then compute the results on demand.
 
-    let zero_vec = Vec::from_elem(max_weight + 1, 0 as uint);
-    let mut best_value = Vec::from_elem(xs_len + 1, zero_vec);
+    let zero_vec: Vec<usize> = repeat(0us).take(max_weight + 1).collect();
+    let mut best_value: Vec<Vec<usize>> = repeat(zero_vec)
+		.take(xs_len + 1).collect();
 
     // loop over the items
-    for i in range(0, xs_len) {
+    for i in (0..xs_len) {
         // loop over the weights
-        for w in range(1, max_weight + 1) {
+        for w in (1..max_weight + 1) {
             // do we have room in our knapsack?
             if xs[i].weight > w {
                 // if we don't, then we'll say that the value doesn't change
@@ -107,7 +110,7 @@ fn knap_01_dp<'a>(xs: &[Want<'a>], max_weight: uint) -> Vec<Want<'a>> {
 
     // we built up the solution space through a forward pass over the data,
     // now we have to traverse backwards to get the solution
-    for i in range(1, xs_len+1).rev() {
+    for i in (1..xs_len+1).rev() {
         // We can check if an item should be added to the knap-sack by comparing
         // best_value with and without this item. If best_value added this
         // item then so should we.

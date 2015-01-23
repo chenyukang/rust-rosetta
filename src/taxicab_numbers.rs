@@ -1,10 +1,12 @@
 // http://rosettacode.org/wiki/Taxicab_numbers
+#![allow(unstable)]
 use std::collections::BinaryHeap;
 use std::num::Int;
+use std::cmp::Ordering;
 
 /// A type to represent a pair-sum of cubes.
 /// value = a^3 + b^3
-#[deriving(PartialEq, Eq)]
+#[derive(Copy, PartialEq, Eq)]
 struct SumCubes {
     a: u64,
     b: u64,
@@ -45,7 +47,9 @@ impl TaxicabNumbers {
     }
 }
 
-impl Iterator<Vec<SumCubes>> for TaxicabNumbers {
+impl Iterator for TaxicabNumbers {
+    type Item = Vec<SumCubes>;
+
     fn next(&mut self) -> Option<Vec<SumCubes>> {
         let mut ways = Vec::new();      // All the ways we can express the current
                                         // value as a sum of cubes

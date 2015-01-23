@@ -2,8 +2,7 @@
 //
 // Contributed by Gavin Baker <gavinb@antonym.org>
 //
-#![feature(slicing_syntax)]
-
+#![allow(unstable)]
 use std::io::{File, BufferedReader};
 use std::num::Float;
 
@@ -15,20 +14,20 @@ fn benford_freq(d: u64) -> f32 {
 }
 
 // Returns the leading digit of any number
-fn first_digit_of(n: u64) -> uint {
+fn first_digit_of(n: u64) -> usize {
     let mut d = n;
     while d > 9 {
         d = d / 10;
     }
-    d as uint
+    d as usize
 }
 
 // Count frequency table using the first digit of each number in a vector
-fn benford_distrib(numbers: &Vec<u64>) -> Vec<f32> {
+fn benford_distrib(numbers: &[u64]) -> Vec<f32> {
 
     // Counts
 
-    let mut counts = Vec::<u64>::from_elem(10, 0);
+    let mut counts = [0u64; 10];
 
     for num in numbers.iter() {
         let first = first_digit_of(*num);
@@ -37,9 +36,9 @@ fn benford_distrib(numbers: &Vec<u64>) -> Vec<f32> {
 
     // Frequencies
 
-    let mut freq = Vec::<f32>::from_elem(10, 0.0);
+    let mut freq = vec![0f32; 10];
 
-    for digit in range(1, 10) {
+    for digit in 1..10 {
         freq[digit] = counts[digit] as f32 / numbers.len() as f32;
     }
 
@@ -50,8 +49,8 @@ fn main() {
 
     // Calculate expected frequencies of all digits according to Benford's Law
 
-    let mut expected_distrib = Vec::<f32>::from_elem(10, 0.0);
-    for digit in range(1, 10) {
+    let mut expected_distrib = [0f32; 10];
+    for digit in (1..10) {
         expected_distrib[digit] = benford_freq(digit as u64);
     }
 
@@ -63,20 +62,19 @@ fn main() {
 
     let fibs: Vec<u64> = file.lines().map(|x| {
         let s = x.unwrap();
-        let n = from_str(s[0..1]);
-        n.unwrap()
+        s[0..1].parse::<u64>().unwrap()
     }).collect();
 
     // Calculate freuencies of first digits in test data
 
-    let found_distrib = benford_distrib(&fibs);
+    let found_distrib = benford_distrib(&fibs[]);
 
     // Print the stats to compare actual vs expected
 
     println!("\nBenford's Law - Digit Distribution");
     println!("\nFirst 1000 Numbers in the Fibonacci Sequence\n");
     println!("digit    expect     found     delta");
-    for digit in range(1, 10) {
+    for digit in (1..10) {
         let expected_pc = expected_distrib[digit] * 100.0;
         let found_pc = found_distrib[digit] * 100.0;
         let delta_pc = expected_pc - found_pc;

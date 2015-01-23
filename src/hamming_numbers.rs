@@ -5,6 +5,7 @@ use num::traits::One;
 use num::one;
 use std::cmp::min;
 use std::collections::RingBuf;
+use std::ops::Mul;
 
 // needed because hamming_numbers_alt uses this as a library
 #[allow(dead_code)]
@@ -21,20 +22,21 @@ fn main() {
         }
     }
 }
+
 //representing a Hamming number as a BigUint
 impl HammingNumber for BigUint {
     // returns the multipliers 2, 3 and 5 in the representation for the HammingNumber
     fn multipliers() -> (BigUint, BigUint, BigUint) {
-        (2u.to_biguint().unwrap(),
-        3u.to_biguint().unwrap(),
-        5u.to_biguint().unwrap())
+        (2u8.to_biguint().unwrap(),
+        3u8.to_biguint().unwrap(),
+        5u8.to_biguint().unwrap())
     }
 }
 
 /// representation of a Hamming number
 /// allows to abstract on how the hamming number is stored
 /// i.e. as BigUint directly or just as the powers of 2, 3 and 5 used to build it
-pub trait HammingNumber : Eq + Ord + ToBigUint + Mul<Self, Self> + One {
+pub trait HammingNumber : Eq + Ord + ToBigUint + Mul<Output=Self> + One + Clone {
     fn multipliers() -> (Self, Self, Self);
 }
 
@@ -52,7 +54,7 @@ pub struct Hamming<T> {
 impl<T: HammingNumber> Hamming<T> {
     /// Static constructor method
     /// `n` initializes the capacity of the queues
-    pub fn new(n: uint) -> Hamming<T> {
+    pub fn new(n: usize) -> Hamming<T> {
         let mut h = Hamming {
             q2: RingBuf::with_capacity(n),
             q3: RingBuf::with_capacity(n),
@@ -67,16 +69,17 @@ impl<T: HammingNumber> Hamming<T> {
     }
 
     /// Pushes the next multiple of `n` (x2, x3, x5) to the queues
-    pub fn enqueue(&mut self, n: &T) {
-        let (two, three, five) = HammingNumber::multipliers();
-        self.q2.push_back(*n * two);
-        self.q3.push_back(*n * three);
-        self.q5.push_back(*n * five);
+    pub fn enqueue(&mut self, n: T) {
+        let (two, three, five) : (T, T, T) = HammingNumber::multipliers();
+        self.q2.push_back(two * n.clone());
+        self.q3.push_back(three * n.clone());
+        self.q5.push_back(five * n.clone());
     }
 }
 
 // Implements the `Iterator` trait, so we can generate Hamming numbers lazily
-impl<T: HammingNumber> Iterator<T> for Hamming<T> {
+impl<T: HammingNumber> Iterator for Hamming<T> {
+    type Item = T;
     // The core of the work is done in the `next` method.
     // We check which of the 3 queues has the lowest candidate and extract it
     // as the next Hamming number.
@@ -98,7 +101,7 @@ impl<T: HammingNumber> Iterator<T> for Hamming<T> {
 
         match h2.or(h3).or(h5) {
             Some(n) => {
-                self.enqueue(&n);
+                self.enqueue(n.clone());
                 Some(n)
             }
             None => unreachable!()
@@ -110,7 +113,7 @@ impl<T: HammingNumber> Iterator<T> for Hamming<T> {
 fn create() {
     let mut h = Hamming::<BigUint>::new(5);
     h.q2.push_back(one::<BigUint>());
-    h.q2.push_back(one::<BigUint>() * 3u.to_biguint().unwrap());
+    h.q2.push_back(one::<BigUint>() * 3.to_biguint().unwrap());
 
     assert_eq!(h.q2.pop_front().unwrap(), one::<BigUint>());
 }
@@ -118,9 +121,9 @@ fn create() {
 #[test]
 fn try_enqueue() {
     let mut h = Hamming::<BigUint>::new(5);
-    let (two, three, five) = HammingNumber::multipliers();
-    h.enqueue(&one::<BigUint>());
-    h.enqueue(&(one::<BigUint>() * two));
+    let (two, three, five): (BigUint, BigUint, BigUint) = HammingNumber::multipliers();
+    h.enqueue(one::<BigUint>());
+    h.enqueue((one::<BigUint>() * two.clone()));
 
     assert!(h.q2.pop_front().unwrap() == one::<BigUint>());
     assert!(h.q3.pop_front().unwrap() == one::<BigUint>());
@@ -133,16 +136,17 @@ fn try_enqueue() {
 #[test]
 fn hamming_iter() {
     let mut hamming = Hamming::<BigUint>::new(20);
-    assert!(hamming.nth(19).unwrap().to_biguint() == 36u.to_biguint());
+    assert!(hamming.nth(19).unwrap().to_biguint() == 36.to_biguint());
 }
 
 #[ignore] // Please run this if you modify the file.  It is too slow to run normally.
 #[test]
+#[allow(unstable)]
 fn hamming_iter_1million() {
     let mut hamming = Hamming::<BigUint>::new(128);
     // one-million-th hamming number has index 999_999 because indexes are zero-based
     assert_eq!(hamming.nth(999_999).unwrap().to_biguint(),
-        from_str(
-        "519312780448388736089589843750000000000000000000000000000000000000000000000000000000")
+        "519312780448388736089589843750000000000000000000000000000000000000000000000000000000"
+        .parse::<BigUint>()
         );
 }

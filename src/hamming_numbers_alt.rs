@@ -8,6 +8,9 @@ use hamming_numbers::{Hamming, HammingNumber};
 use num::pow;
 use num::traits::One;
 use num::bigint::{BigUint, ToBigUint};
+use std::ops::Mul;
+use std::cmp::Ordering;
+use std::cmp::Ordering::{Less, Equal, Greater};
 
 mod hamming_numbers;
 
@@ -37,16 +40,17 @@ pub const LN_5: f64 = 1.60943791243410037460075933322618763952560135426851772191
 // result as a BigUint only when we need it.
 // we also store the logarithm for quicker comparisons, using this property
 // of logarithms: ln(2^i * 3^j * 5^k) = i*ln2 + j*ln3 + k*ln5
-#[deriving(Show)]
+#[derive(Show, Copy)]
 pub struct HammingTriple {
-    pow_2: uint,
-    pow_3: uint,
-    pow_5: uint,
+    pow_2: usize,
+    pow_3: usize,
+    pow_5: usize,
     ln: f64
 }
 
-impl Mul<HammingTriple, HammingTriple> for HammingTriple {
-    fn mul(&self, other: &HammingTriple) -> HammingTriple {
+impl Mul for HammingTriple {
+    type Output = HammingTriple;
+    fn mul(self, other: HammingTriple) -> HammingTriple {
         HammingTriple{ pow_2: self.pow_2 + other.pow_2,
             pow_3: self.pow_3 + other.pow_3,
             pow_5: self.pow_5 + other.pow_5,
@@ -73,14 +77,14 @@ impl HammingNumber for HammingTriple {
 impl ToBigUint for HammingTriple {
    // calculate the value as a BigUint
     fn to_biguint(&self) -> Option<BigUint> {
-        Some(pow(2u.to_biguint().unwrap(), self.pow_2) *
-        pow(3u.to_biguint().unwrap(), self.pow_3) *
-        pow(5u.to_biguint().unwrap(), self.pow_5))
+        Some(pow(2u8.to_biguint().unwrap(), self.pow_2) *
+        pow(3u8.to_biguint().unwrap(), self.pow_3) *
+        pow(5u8.to_biguint().unwrap(), self.pow_5))
     }
 }
 
 impl HammingTriple {
-    fn new(pow_2: uint, pow_3: uint, pow_5: uint) -> HammingTriple {
+    fn new(pow_2: usize, pow_3: usize, pow_5: usize) -> HammingTriple {
         HammingTriple {
             pow_2: pow_2,
             pow_3: pow_3,
@@ -133,15 +137,16 @@ impl Ord for HammingTriple {
 #[test]
 fn hamming_iter() {
     let mut hamming = Hamming::<HammingTriple>::new(20);
-    assert!(hamming.nth(19).unwrap().to_biguint() == 36u.to_biguint());
+    assert!(hamming.nth(19).unwrap().to_biguint() == 36u8.to_biguint());
 }
 
 #[test]
+#[allow(unstable)]
 fn hamming_iter_1million() {
     let mut hamming = Hamming::<HammingTriple>::new(128);
     // one-million-th hamming number has index 999_999 because indexes are zero-based
     assert_eq!(hamming.nth(999_999).unwrap().to_biguint(),
-        from_str(
-        "519312780448388736089589843750000000000000000000000000000000000000000000000000000000")
+        "519312780448388736089589843750000000000000000000000000000000000000000000000000000000"
+        .parse::<BigUint>()
         );
 }

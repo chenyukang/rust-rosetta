@@ -1,7 +1,8 @@
 // Implements http://rosettacode.org/wiki/Walk_a_directory/Recursively
+#![allow(unstable)]
 
-#![feature(phase)]
-#[phase(plugin)]
+#![feature(plugin)]
+#[plugin]
 extern crate regex_macros;
 extern crate regex;
 

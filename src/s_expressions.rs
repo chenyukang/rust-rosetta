@@ -18,20 +18,19 @@
 // decoding technique doesn't allocate extra space for strings.  Does support numbers, but only
 // float types (supporting more types is possible but would complicate the code significantly).
 //
-#![feature(slicing_syntax, globs)]
-
+#![allow(unstable)]
 extern crate arena;
 extern crate test;
 
 use arena::TypedArena;
 
 use std::io;
-use std::num::{mod, Float};
+use std::num::{self, Float};
 use self::SExp::*;
 use self::Error::*;
 use self::Token::*;
 
-#[deriving(PartialEq,Show)]
+#[derive(PartialEq,Show,Copy)]
 // The actual SExp structure.  Supports f64s, lists, and string literals.  Note that it takes
 // everything by reference, rather than owning it--this is mostly done just so we can allocate
 // SExps statically (since we don't have to call Vec).  It does complicate the code a bit,
@@ -43,7 +42,7 @@ enum SExp<'a> {
 }
 
 // Errors that can be thrown by the parser.
-#[deriving(PartialEq,Show)]
+#[derive(PartialEq,Show)]
 enum Error {
     NoReprForFloat, // If the float is NaN, Infinity, etc.
     UnterminatedStringLiteral, // Missing an end double quote during string parsing
@@ -54,7 +53,7 @@ enum Error {
 }
 
 // Tokens returned from the token stream.
-#[deriving(PartialEq)]
+#[derive(PartialEq, Copy)]
 enum Token<'a> {
     ListStart, // Left parenthesis
     ListEnd, // Right parenthesis
@@ -65,6 +64,7 @@ enum Token<'a> {
 // An iterator over a string that yields a stream of Tokens.
 // Implementation note: it probably seems weird to store first, rest, AND string, since they should
 // all be derivable from string.  But see below.
+#[derive(Copy)]
 struct Tokens<'a> {
     string: &'a str, // The part of the string that still needs to be parsed
     first: Option<char>, // The first character to parse
@@ -137,7 +137,7 @@ impl<'a> Tokens<'a> {
                     // Unlike the quoted case, it's not an error to encounter EOF before whitespace.
                     let mut end_ch = None;
                     let str = {
-                        let mut iter = self.string.splitn(1, |ch: char| {
+                        let mut iter = self.string.splitn(1, |&mut: ch: char| {
                             let term = ch == ')' || ch == '(';
                             if term { end_ch = Some(ch) }
                             term || ch.is_whitespace()
@@ -201,7 +201,7 @@ impl<'a> SExp<'a> {
         match *self {
             F64(f) => match f.classify() {
                 // We don't want to identify NaN, Infinity, etc. as floats.
-                num::FPNormal | num::FPZero => from_io_result(write!(writer, "{}", f)),
+                num::FpCategory::Normal | num::FpCategory::Zero => from_io_result(write!(writer, "{}", f)),
                 _ => Err(NoReprForFloat)
             },
             List(ref l) => {
@@ -266,14 +266,14 @@ impl<'a> SExp<'a> {
                     Some(mut l) => {
                         // We allocate a slot for the current list in our parse context (needed for
                         // safety) before pushing it onto its parent list.
-                        l.push(List(arena.alloc(list).as_slice()));
+                        l.push(List(&**arena.alloc(list)));
                         // Now reset the current list to the parent list
                         list = l;
                     },
                     // There was nothing on the stack, so we're at the end of the topmost list.
                     // The check to make sure there are no more tokens is required for correctness.
                     None => return match try!(tokens.next()) {
-                        EOF => Ok(List(arena.alloc(list).as_slice())),
+                        EOF => Ok(List(&**arena.alloc(list))),
                         _ => Err(ExpectedEOF),
                     }
                 },
@@ -312,9 +312,9 @@ fn try_decode<'a>(ctx: &'a mut ParseContext<'a>) -> Result<SExp<'a>, Error> {
 
 #[cfg(not(test))]
 fn main() {
-    println!("{}", try_encode());
+    println!("{:?}", try_encode());
     let ref mut ctx = ParseContext::new(SEXP_STRING_IN);
-    println!("{}", try_decode(ctx));
+    println!("{:?}", try_decode(ctx));
 }
 
 #[bench]
@@ -338,7 +338,7 @@ fn bench_encode(b: &mut test::Bencher)
 fn test_sexp_encode() {
     const SEXP_STRING: &'static str =
 r#"(("data" "quoted data" 123 4.5) ("data" ("!@#" (4.5) "(more" "data)")))"#;
-    assert_eq!(Ok(SEXP_STRING), try_encode().as_ref().map( |s| s[]));
+    assert_eq!(Ok(SEXP_STRING.to_string()), try_encode());
 }
 
 #[test]

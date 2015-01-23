@@ -2,17 +2,17 @@
 //
 // Contributed by Gavin Baker <gavinb@antonym.org>
 // Adapted from the Go version
+#![allow(unstable)]
 
-#![allow(dead_code)]
-
-use std::num::{Float, FloatMath};
+use std::num::Float;
 use std::io::{BufferedReader, BufferedWriter, File};
+use std::iter::repeat;
 
 // Simple 8-bit grayscale image
 
 struct ImageGray8 {
-    width: uint,
-    height: uint,
+    width: usize,
+    height: usize,
     data: Vec<u8>,
 }
 
@@ -24,7 +24,6 @@ fn load_pgm(filename: &str) -> ImageGray8 {
     let mut file = BufferedReader::new(File::open(&path));
 
     // Read header
-
     let magic_in = file.read_line().unwrap();
     let width_in = file.read_line().unwrap();
     let height_in = file.read_line().unwrap();
@@ -35,8 +34,8 @@ fn load_pgm(filename: &str) -> ImageGray8 {
 
     // Parse header
 
-    let width: uint = from_str(width_in.trim()).unwrap();
-    let height: uint = from_str(height_in.trim()).unwrap();
+    let width = width_in.trim().parse::<usize>().unwrap();
+    let height: usize = height_in.trim().parse::<usize>().unwrap();
 
     println!("Reading pgm file {}: {} x {}", filename, width, height);
 
@@ -45,12 +44,12 @@ fn load_pgm(filename: &str) -> ImageGray8 {
     let mut img = ImageGray8 {
         width: width,
         height: height,
-        data: Vec::from_elem(width*height, 0),
+        data: repeat(0u8).take(width*height).collect(),
     };
 
     // Read image data
 
-    match file.read_at_least(img.data.len(), img.data.as_mut_slice()) {
+    match file.read_at_least(img.data.len(), &mut (img.data)[]) {
         Ok(bytes_read) => println!("Read {} bytes", bytes_read),
         Err(e) => println!("error reading: {}", e)
     }
@@ -67,7 +66,7 @@ fn save_pgm(img: &ImageGray8, filename: &str) {
 
     // Write header
 
-    match file.write_line(format!("P5\n{}\n{}\n255", img.width, img.height).as_slice()) {
+    match file.write_line(&* format!("P5\n{}\n{}\n255", img.width, img.height)) {
         Err(e) => println!("Failed to write header: {}", e),
         _ => {},
     }
@@ -76,24 +75,24 @@ fn save_pgm(img: &ImageGray8, filename: &str) {
 
     // Write binary image data
 
-    match file.write(img.data.as_slice()) {
+    match file.write(&(img.data[])) {
         Err(e) => println!("Failed to image data: {}", e),
         _ => {},
     }
 }
 
-fn hough(image: &ImageGray8, out_width: uint, out_height: uint) -> ImageGray8 {
+fn hough(image: &ImageGray8, out_width: usize, out_height: usize) -> ImageGray8 {
 
     let in_width = image.width;
     let in_height = image.height;
 
     // Allocate accumulation buffer
 
-    let out_height = ((out_height/2) * 2) as uint;
+    let out_height = ((out_height/2) * 2) as usize;
     let mut accum = ImageGray8 {
         width: out_width,
         height: out_height,
-        data: Vec::from_elem(out_width*out_height, 255),
+        data: repeat(255).take(out_width*out_height).collect(),
     };
 
     // Transform extents
@@ -104,8 +103,8 @@ fn hough(image: &ImageGray8, out_width: uint, out_height: uint) -> ImageGray8 {
 
     // Process input image in raster order
 
-    for y in range(0, in_height) {
-        for x in range(0, in_width) {
+    for y in (0..in_height) {
+        for x in (0..in_width) {
             let in_idx = y*in_width+x;
             let col = image.data[in_idx];
             if col == 255 {
@@ -114,11 +113,11 @@ fn hough(image: &ImageGray8, out_width: uint, out_height: uint) -> ImageGray8 {
 
             // Project into rho,theta space
 
-            for jtx in range(0, out_width) {
+            for jtx in (0..out_width) {
                 let th = dth * (jtx as f64);
                 let r = (x as f64)*(th.cos()) + (y as f64)*(th.sin());
 
-                let iry = out_height/2 - (r/(dr as f64)+0.5).floor() as uint;
+                let iry = out_height/2 - (r/(dr as f64)+0.5).floor() as usize;
                 let out_idx = jtx + iry * out_width;
                 let col = accum.data[out_idx];
                 if col > 0 {

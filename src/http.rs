@@ -1,4 +1,6 @@
 // http://rosettacode.org/wiki/HTTP
+#![allow(unstable)]
+
 use std::io::net::tcp::TcpStream;
 use std::io::IoResult;
 
@@ -25,18 +27,19 @@ fn main() {
 
     let target = std::os::args().pop().unwrap();
     println!("Making the request... This might take a minute.");
-    match get_index(target.as_slice(), PORT) {
+    match get_index(&target[], PORT) {
         Ok(out) => println!("{}", out),
         Err(e) => println!("Error: {}", e)
     }
 }
 
 #[test]
+#[ignore] // FIXME: http/webrequest should eventually be moved to hyper
 fn test_request() {
     const HOST: &'static str = "127.0.0.1";
     const PORT: u16 = 12321;
 
-    let (port, acceptor) = range(PORT, ::std::u16::MAX)
+    let (port, acceptor) = (PORT..::std::u16::MAX)
         .map( |port| (port, webserver::handle_server(HOST, port)) )
         .find( |&(_, ref acceptor)| acceptor.is_ok() )
         .unwrap();

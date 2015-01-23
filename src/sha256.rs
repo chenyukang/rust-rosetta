@@ -1,4 +1,5 @@
 // Implements http://rosettacode.org/wiki/SHA-256
+#![allow(unstable)]
 
 // note that for now the rustc::util::sha2::Sha256 docs state:
 // This implementation is not intended for external use or for any use where security is
@@ -12,7 +13,7 @@ fn main() {
 }
 
 fn sha_256(input: &str) -> String {
-    let mut sh = box Sha256::new();
+    let mut sh = Sha256::new();
     sh.input_str(input);
     sh.result_str()
 }

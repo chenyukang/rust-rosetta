@@ -1,12 +1,14 @@
 // http://rosettacode.org/wiki/Levenshtein_distance/Alignment
-use std::uint;
+#![allow(unstable)]
+use std::usize;
 use std::collections::DList;
+use std::iter::repeat;
 
 enum Operation { Insert, Delete, Match, }
 
 // Returns the value of a 2D vector given a pair of indexes.
 // Returns the default value if indices are out of bounds.
-fn get_val(mat: &Vec<Vec<uint>>, r: uint, c: uint, default: uint) -> uint {
+fn get_val(mat: &Vec<Vec<usize>>, r: usize, c: usize, default: usize) -> usize {
     match mat.get(r) {
         Some(col) => {
             match col.get(c) { Some(v) => *v, None => default, }
@@ -18,15 +20,17 @@ fn get_val(mat: &Vec<Vec<uint>>, r: uint, c: uint, default: uint) -> uint {
 // to the scoring method to only allow positive ints.
 //
 // http://en.wikipedia.org/wiki/Needleman%E2%80%93Wunsch_algorithm
-fn levenshtein_distance(s1: &str, s2: &str) -> (uint, String, String) {
+fn levenshtein_distance(s1: &str, s2: &str) -> (usize, String, String) {
     let l1 = s1.len() + 1;
     let l2 = s2.len() + 1;
 
-    let mut mat: Vec<Vec<uint>> = Vec::from_elem(l1, { Vec::from_elem(l2, 0u) });
-    for row in range(0u, l1) { mat[row][0] = row; }
-    for col in range(0u, l2) { mat[0][col] = col; }
-    for row in range(1u, l1) {
-        for col in range(1u, l2) {
+    let mut mat: Vec<Vec<usize>> = repeat( 
+		repeat(0us).take(l2).collect()
+		).take(l1).collect();
+    for row in (0us..l1) { mat[row][0] = row; }
+    for col in (0us..l2) { mat[0][col] = col; }
+    for row in (1us..l1) {
+        for col in (1us..l2) {
             mat[row][col] =
                 if s1.char_at(row - 1) == s2.char_at(col - 1) {
                     mat[row - 1][col - 1]
@@ -43,9 +47,9 @@ fn levenshtein_distance(s1: &str, s2: &str) -> (uint, String, String) {
     let mut cur_row = l1 - 1;
     let mut cur_col = l2 - 1;
     while cur_row > 0 || cur_col > 0 {
-        let ins = get_val(&mat, cur_row, cur_col - 1, uint::MAX);
-        let del = get_val(&mat, cur_row - 1, cur_col, uint::MAX);
-        let sub = get_val(&mat, cur_row - 1, cur_col - 1, uint::MAX);
+        let ins = get_val(&mat, cur_row, cur_col - 1, usize::MAX);
+        let del = get_val(&mat, cur_row - 1, cur_col, usize::MAX);
+        let sub = get_val(&mat, cur_row - 1, cur_col - 1, usize::MAX);
         let vals =
             vec!(( sub , Operation::Match ) , ( ins , Operation::Insert ) , ( del , Operation::Delete ));
         match vals.into_iter().min_by(|&(x, _)| { x }).unwrap() {
@@ -88,10 +92,11 @@ fn main() {
 #[test]
 fn test_lev_distance() {
     let test_results =
-        vec!(( "sunday" , "saturday" , (3, "s--unday".into_string(), "sunurday".into_string()))  , 
-            ( "sitting" , "kitten" , (3, "sitting".into_string(), "kitten-".into_string())) , 
-            ("test" , "test" , (0, "test".into_string(), "test".into_string()) ));
+        vec![( "sunday" , "saturday" , (3, "s--unday", "sunurday"))  , 
+            ( "sitting" , "kitten" , (3, "sitting", "kitten-")) , 
+            ("test" , "test" , (0, "test", "test") )];
     for (word1, word2, dist) in test_results.into_iter() {
-        assert_eq!(levenshtein_distance ( word1 , word2 ) , dist);
+        let (d, s1, s2) = levenshtein_distance ( word1 , word2 ); 
+        assert_eq!( (d, &s1[], &s2[]) , dist);
     }
 }

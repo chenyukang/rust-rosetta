@@ -1,10 +1,12 @@
 // http://rosettacode.org/wiki/Arithmetic/Rational
-
+#![allow(unstable)]
 extern crate num;
 
 use std::num::{Float, SignedInt};
 use std::fmt;
 use num::traits::{Zero, One};
+use std::cmp::Ordering;
+use std::ops::{Add, Mul, Neg, Sub, Div};
 
 #[cfg(not(test))]
 fn main() {
@@ -15,11 +17,11 @@ fn main() {
 
 fn perfect_numbers(max: i64) -> Vec<i64> {
     let mut ret=Vec::new();
-    for candidate in range(2, max) {
+    for candidate in (2..max) {
         let mut sum=Frac::secure_new(1, candidate).unwrap();
         let max2=((candidate as f64).sqrt().floor()) as i64;
 
-        for factor in std::iter::range_inclusive(2, max2) {
+        for factor in (2..max2+1) {
             if candidate % factor == 0 {
                 sum = sum + Frac::new(1, factor) + Frac::new(factor, candidate);
             }
@@ -28,7 +30,7 @@ fn perfect_numbers(max: i64) -> Vec<i64> {
     }
     ret
 }
-
+#[derive(Copy)]
 struct Frac {
     num: i64,
     den: i64
@@ -116,14 +118,17 @@ impl Ord for Frac {
     }
 }
 
-impl Neg<Frac> for Frac {
-    fn neg(&self) -> Frac {
+impl Neg for Frac {
+    type Output = Frac;
+    
+    fn neg(self) -> Frac {
         Frac{num:-self.num, den:self.den}
     }
 }
 
-impl Add<Frac, Frac> for Frac {
-    fn add(&self, other: &Frac) -> Frac {
+impl Add for Frac {
+    type Output = Frac;
+    fn add(self, other: Frac) -> Frac {
         let (a, b)=(self.reduce(), other.reduce());
         let m = lcm(a.den, b.den);
 
@@ -133,20 +138,23 @@ impl Add<Frac, Frac> for Frac {
     }
 }
 
-impl Sub<Frac, Frac> for Frac {
-    fn sub(&self, other: &Frac) -> Frac {
-        *self + (- *other)
+impl Sub for Frac {
+    type Output = Frac;
+    fn sub(self, other: Frac) -> Frac {
+        self + (- other)
     }
 }
 
-impl Mul<Frac, Frac> for Frac {
-    fn mul(&self, other: &Frac) -> Frac {
+impl Mul for Frac {
+    type Output = Frac;
+    fn mul(self, other: Frac) -> Frac {
         Frac::new_reduced(self.num * other.num, self.den * other.den)
     }
 }
 
-impl Div<Frac, Frac> for Frac {
-    fn div(&self, other: &Frac) -> Frac {
+impl Div for Frac {
+    type Output = Frac;
+    fn div(self, other: Frac) -> Frac {
         Frac::new_reduced(self.num * other.den, self.den * other.num)
     }
 }

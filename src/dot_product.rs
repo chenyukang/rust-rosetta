@@ -1,10 +1,10 @@
 // Implements http://rosettacode.org/wiki/Dot_product
-
 extern crate num;
 
 use num::traits::Zero; 
+use std::ops::Mul;
 
-fn dotp<T: Zero + Mul<T, T> + Copy>(this: &[T], other: &[T]) -> T {
+fn dotp<T: Zero + Mul<Output=T> + Copy>(this: &[T], other: &[T]) -> T {
   assert!(this.len() == other.len(), "The dimensions must be equal");
 
   let zero : T = Zero::zero();
@@ -22,6 +22,6 @@ fn main() {
 
 #[test]
 fn test_dotp() {
-  let result = dotp(&[1i, 3, -5], &[4i, -2, -1]);
+  let result = dotp(&[1i32, 3, -5], &[4i32, -2, -1]);
   assert_eq!(result, 3);
 }

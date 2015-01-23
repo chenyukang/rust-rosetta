@@ -1,15 +1,15 @@
 // Implements http://rosettacode.org/wiki/Echo_server
-#![feature(slicing_syntax)]
-
+#![allow(unstable)]
 use std::io::{Acceptor, BufferedReader, IoError, IoResult, Listener, TimedOut};
 use std::io::net::tcp::{TcpListener, TcpStream};
 use std::time::Duration;
+use std::thread::Thread;
 
 // The actual echo server
 fn echo_server(host: &'static str, port: u16, timeout: Option<Duration>) -> IoResult<()> {
     // Create a new TCP listener at host:port.
     let mut listener = try!(TcpListener::bind((host, port)));
-    println!("Starting echo server on {}", listener.socket_name());
+    println!("Starting echo server on {:?}", listener.socket_name());
 
     let mut acceptor = try!(listener.listen());
     println!("Echo server started");
@@ -29,13 +29,13 @@ fn echo_server(host: &'static str, port: u16, timeout: Option<Duration>) -> IoRe
                 let name = try!(stream.peer_name());
                 println!("New connection: {}", name);
                 // Launch a new thread to deal with the connection.
-                spawn(proc() {
+                Thread::spawn(move || -> () {
                     if let Err(e) = echo_session(stream.clone()) {
                         println!("I/O error: {} -- {}", name, e);
                     }
                     println!("Closing connection: {}", name);;
                     drop(stream);
-                })
+                });
             }
         }
     }
@@ -51,7 +51,7 @@ fn echo_session(mut stream: TcpStream) -> IoResult<()> {
     for line in reader.lines() {
         let l = try!(line);
         print!("Received line from {}: {}", name, l);
-        try!(writer.write_str(l[]));
+        try!(writer.write_str(&l[]));
         print!("Wrote line to {}: {}", name, l);
     }
     Ok(())

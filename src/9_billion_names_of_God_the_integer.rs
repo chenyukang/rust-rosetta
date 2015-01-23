@@ -1,11 +1,10 @@
 //Implements http://rosettacode.org/wiki/9_billion_names_of_God_the_integer
+#![allow(unstable)]
 
 extern crate num;
 
-use num::bigint::BigUint;
 use std::cmp::min;
-use std::iter::range_inclusive;
-use num::traits::{Zero, One};
+use num::{BigUint, Zero, One};
 
 pub struct Solver {
     // The `cache` is a private implementation detail,
@@ -21,37 +20,37 @@ impl Solver {
     }
 
     // Returns a string representing a line
-    pub fn row_string(&mut self, idx: uint) -> String {
+    pub fn row_string(&mut self, idx: usize) -> String {
         let r = self.cumulative(idx);
 
-        range(0, idx).map(|i| r[i+1] - r[i])
+        (0..idx).map(|i| &r[i+1] - &r[i])
                      .map(|n| n.to_string())
                      .collect::<Vec<String>>()
                      .connect(", ")
     }
 
     // Convenience method to access the last column in a culmulated calculation
-    pub fn row_sum(&mut self, idx: uint) -> &BigUint {
+    pub fn row_sum(&mut self, idx: usize) -> &BigUint {
         // This can never fail as we always add zero or one, so it's never empty.
         self.cumulative(idx).last().unwrap()
     }
 
-    fn cumulative(&mut self, idx: uint) -> &[BigUint] {
-        for l in range_inclusive(self.cache.len(), idx) {
+    fn cumulative(&mut self, idx: usize) -> &[BigUint] {
+        for l in (self.cache.len()..idx+1) {
             let mut r : Vec<BigUint> = vec![Zero::zero()];
 
-            for x in range_inclusive(1, l) {
+            for x in (1..l+1) {
                 let w = {
                     let y = &r[x-1];
                     let z = &self.cache[l-x][min(x, l-x)];
-                    *y + *z
+                    y + z
                 };
                 r.push(w)
             }
             self.cache.push(r);
         }
 
-        self.cache[idx].as_slice()
+        &self.cache[idx][]
     }
 }
 
@@ -60,12 +59,12 @@ fn main() {
     let mut solver = Solver::new();
 
     println!("rows");
-    for n in range(1u, 11) {
+    for n in (1us..11) {
         println!("{}: {}", n, solver.row_string(n));
     }
 
     println!("sums");
-    for &y in [23u, 123, 1234, 12345].iter() {
+    for &y in [23us, 123, 1234, 12345].iter() {
         println!("{}: {}", y, solver.row_sum(y));
     }
 }
@@ -73,12 +72,13 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::Solver;
+    use num::BigUint;
 
     #[test]
     fn test_cumulative() {
         let mut solver = Solver::new();
-        let t = |n: uint, expected: &str| {
-            assert_eq!(solver.row_sum(n), &from_str(expected).unwrap())
+        let mut t = |&mut: n: usize, expected: &str| {
+            assert_eq!(solver.row_sum(n), &expected.parse::<BigUint>().unwrap());
         };
 
         t(23, "1255");
@@ -90,7 +90,7 @@ mod test {
     #[test]
     fn test_row() {
         let mut solver = Solver::new();
-        let t = |n: uint, expected: &str| {
+        let mut t = |&mut: n: usize, expected: &str| {
             assert_eq!(solver.row_string(n), expected);
         };
 

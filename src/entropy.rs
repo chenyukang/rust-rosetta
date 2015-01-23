@@ -1,8 +1,8 @@
 // Implements http://rosettacode.org/wiki/Entropy
-
+#![allow(unstable)]
 use std::num::Float;
 use std::collections::HashMap;
-use std::collections::hash_map::{Occupied, Vacant};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 pub fn shannon_entropy(s: &str) -> f64 {
     let mut map = HashMap::new();
@@ -10,7 +10,7 @@ pub fn shannon_entropy(s: &str) -> f64 {
     // Count occurrences of each char
     for c in s.chars() {
         match map.entry(c) {
-            Vacant(entry) => { entry.set(1u); },
+            Vacant(entry) => { entry.insert(1us); },
             Occupied(mut entry) => { *entry.get_mut() += 1; },
         };
     }

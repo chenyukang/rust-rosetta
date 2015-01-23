@@ -1,8 +1,10 @@
 // Implements http://rosettacode.org/wiki/Basic_bitmap_storage
+#![allow(unstable)]
 use std::default::Default;
 use std::io::{File, BufferedWriter, IoResult};
+use std::ops::{Index, IndexMut};
 
-#[deriving(Clone, Default, PartialEq, Show)]
+#[derive(Copy, Clone, Default, PartialEq, Show)]
 pub struct Color {
     pub red: u8,
     pub green: u8,
@@ -10,17 +12,18 @@ pub struct Color {
 }
 
 pub struct Image {
-    pub width: uint,
-    pub height: uint,
+    pub width: usize,
+    pub height: usize,
     pub data: Vec<Color>
 }
 
 impl Image {
-    pub fn new(width: uint, height: uint) -> Image {
+    pub fn new(width: usize, height: usize) -> Image {
         Image {
             width: width,
             height: height,
-            data: Vec::from_elem(width*height, Default::default())
+            data: ::std::iter::repeat(Default::default())
+				.take(width*height).collect(),
         }
     }
 
@@ -34,7 +37,7 @@ impl Image {
         let file = File::create(&Path::new(filename));
         let mut writer = BufferedWriter::new(file);
         try!(writer.write_line("P6"));
-        try!(write!(&mut writer, "{} {} {}\n", self.width, self.height, 255u));
+        try!(write!(&mut writer, "{} {} {}\n", self.width, self.height, 255us));
         for color in self.data.iter() {
             for channel in [color.red, color.green, color.blue].iter() {
                 try!(writer.write_u8(*channel));
@@ -44,14 +47,18 @@ impl Image {
     }
 }
 
-impl Index<(uint, uint), Color> for Image {
-    fn index<'a>(&'a self, &(x, y): &(uint, uint)) -> &'a Color {
+impl Index<(usize, usize)> for Image {
+    type Output=Color;
+
+    fn index<'a>(&'a self, &(x, y): &(usize, usize)) -> &'a Color {
         &self.data[x + y*self.width]
     }
 }
 
-impl IndexMut<(uint, uint), Color> for Image {
-    fn index_mut<'a>(&'a mut self, &(x, y): &(uint, uint)) -> &'a mut Color {
+impl IndexMut<(usize, usize)> for Image {
+    type Output=Color;
+
+    fn index_mut<'a>(&'a mut self, &(x, y): &(usize, usize)) -> &'a mut Color {
         & mut self.data[x + y*self.width]
     }
 }
@@ -61,14 +68,14 @@ impl IndexMut<(uint, uint), Color> for Image {
 pub fn main() {
     let mut image = Image::new(10, 10);
 
-    for y in range(0u, 10) {
-        for x in range(5u, 10) {
+    for y in (0us..10) {
+        for x in (5us..10) {
             image[(x,y)] = Color { red: 255, green: 255, blue: 255 };
         }
     }
 
-    for y in range(0u, 10) {
-        for x in range(0u, 10) {
+    for y in (0us..10) {
+        for x in (0us..10) {
             if image[(x,y)].red + image[(x,y)].green + image[(x,y)].blue == 0 {
                 print!("#");
             } else {
@@ -96,8 +103,8 @@ mod test {
     #[test]
     fn getting() {
         let image = Image::new(3, 4);
-        for x in range(0u, 3) {
-            for y in range(0u, 4) {
+        for x in (0us..3) {
+            for y in (0us..4) {
                 assert_eq!(image[(x, y)], Default::default());
             }
         }
@@ -115,8 +122,8 @@ mod test {
         let mut image = Image::new(4, 3);
         let fill = Color { red: 3, green: 2, blue: 5};
         image.fill(fill);
-        for x in range(0u, 4) {
-            for y in range(0u, 3) {
+        for x in (0us..4) {
+            for y in (0us..3) {
                 assert_eq!(image[(x, y)], fill);
             }
         }

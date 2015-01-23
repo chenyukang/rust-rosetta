@@ -1,32 +1,30 @@
 // http://rosettacode.org/wiki/Function_composition
-#[cfg(not(test))]
-use std::f32::consts;
-
+#![allow(unstable)]
 #[cfg(not(test))]
 fn main() {
-    fn f(x: uint) -> String { x.to_string() }
-    fn g(x: f32) -> uint { x as uint }
+    use std::f32::consts;
 
-    // just a silly example
-    // turn PI to a uint and then
-    // the uint to a String
-    // via function composition
+    // the two functions we will compose:
+    let f = |&: x: u32| x.to_string();
+    let g = |&: x: f32| x as u32;
+
+    // their composition
     let comp = compose(f, g);
-    println!("{}", comp(consts::PI));
+
+    println!("{:?}", (*comp)(consts::PI));
 }
 
-// the future unboxed closures should
-// allow to compose closures, not just bare functions (so that environment can be captured)
-// Also returning a proc has the limitation that the composed function can only be called once
-fn compose<A, B, C>(f: fn(A) -> B, g: fn(C) -> A) -> proc(C): 'static -> B {
-    proc(x: C) {f(g(x))}
+fn compose<'a, F, G, A, B, C>(f: F, g: G) -> Box<Fn(A) -> C + 'a>
+    where G: Fn(A) -> B + 'a, F: Fn(B) -> C + 'a
+{
+    Box::new( move |&: a: A| f(g(a)) )
 }
 
 #[test]
 fn test_compose() {
-    fn inc(x: uint) -> uint { x + 1 }
-    fn mul(x: uint) -> uint { x * 3 }
+    fn inc(x: usize) -> usize { x + 1 }
+    fn mul(x: usize) -> usize { x * 3 }
 
     let comp = compose(inc, mul);
-    assert_eq!(comp(3), 10);
+    assert_eq!((*comp)(3), 10);
 }

@@ -1,19 +1,19 @@
 // Implements http://rosettacode.org/wiki/LZW_compression
-
+#![allow(unstable)]
 use std::collections::hash_map::HashMap;
 
 // Compress using LZW
-fn compress(original_str: &str) -> Vec<int> {
+fn compress(original_str: &str) -> Vec<i32> {
    let original = original_str.as_bytes();
    let mut dict_size = 256;
    let mut dictionary = HashMap::new();
 
-   for i in range(0i, dict_size) {
+   for i in (0i32..dict_size) {
       dictionary.insert(vec!(i as u8), i);
    }
 
-   let mut result = vec!();
-   let mut w = vec!();
+   let mut result = vec![];
+   let mut w = vec![];
    for &c in original.iter() {
       let mut wc = w.clone();
       wc.push(c);
@@ -24,7 +24,7 @@ fn compress(original_str: &str) -> Vec<int> {
             result.push(dictionary[w]);
             dictionary.insert(wc, dict_size);
             dict_size += 1;
-            w = vec!(c);
+            w = vec![c];
          }
       }
    }
@@ -37,16 +37,16 @@ fn compress(original_str: &str) -> Vec<int> {
 }
 
 // Decompress using LZW
-fn decompress(compressed: &Vec<int>) -> String {
+fn decompress(compressed: &[i32]) -> String {
    let mut dict_size = 256;
    let mut dictionary = HashMap::new();
 
-   for i in range(0i, dict_size) {
-      dictionary.insert(i, vec!(i as u8));
+   for i in (0i32..dict_size) {
+      dictionary.insert(i, vec![i as u8]);
    }
 
-   let mut w = vec!(compressed[0].clone() as u8);
-   let compressed = compressed.slice_from(1);
+   let mut w = vec![compressed[0].clone() as u8];
+   let compressed = &compressed[1..];
    let mut result = w.clone();
    for &k in compressed.iter() {
       let entry = match dictionary.get(&k) {
@@ -73,23 +73,24 @@ fn main() {
 
     // Show compressed
     let compressed = compress(original);
-    println!("Compressed: {}", compressed);
+    println!("Compressed: {:?}", compressed);
 
     // Show decompressed
-    let decompressed = decompress(&compressed);
-    println!("Decompressed: {}", decompressed);
+    let decompressed = decompress(&compressed[]);
+    println!("Decompressed: {}", &decompressed[]);
 }
 
 #[test]
 fn test_coherence() {
-    for s in range(50000i, 50100).map(|n| n.to_string()) {
-        assert_eq!(decompress(&compress(s.as_slice())), s);
+    for s in (50000i32..50100).map(|n| n.to_string()) {
+        let s = &s[];
+        assert_eq!(&*decompress(&*compress(s)), s);
     }
 }
 
 #[test]
 fn test_example() {
     let original = "TOBEORNOTTOBEORTOBEORNOT";
-    assert_eq!(compress(original), [84i, 79, 66, 69, 79, 82, 78, 79, 84,
+    assert_eq!(compress(original), [84i32, 79, 66, 69, 79, 82, 78, 79, 84,
                                                 256, 258, 260, 265, 259, 261, 263]);
 }

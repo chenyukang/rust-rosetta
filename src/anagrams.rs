@@ -1,25 +1,27 @@
 // Implements http://rosettacode.org/wiki/Anagrams
+#![allow(unstable)]
 #[cfg(not(test))]
 use std::io::{File, BufferedReader};
 use std::collections::{HashMap, HashSet};
-use std::collections::hash_map::{Occupied, Vacant};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 fn sorted_characters(string: &str) -> String {
     let mut chars = string.chars().collect::<Vec<char>>();
     chars.sort();
-    String::from_chars(chars.as_slice())
+    chars.iter().map(|c| *c).collect()
 }
 
 /// Returns groups of anagrams where each group consists of a set
 /// containing the words
-fn anagrams<T: Iterator<String>>(mut lines: T) -> HashMap<String, HashSet<String>> {
+fn anagrams<T: Iterator<Item=String>>(mut lines: T) -> HashMap<String, HashSet<String>> {
     let mut groups = HashMap::new();
 
     // Make groups of words according to the letters they contain
     for line in lines {
         let s = line.trim();
-        let set = match groups.entry(sorted_characters(s)) {
-            Vacant(entry) => entry.set(HashSet::new()), // Insert new set if not found
+        let sorted = sorted_characters(s);
+        let set = match groups.entry(sorted) {
+            Vacant(entry) => entry.insert(HashSet::new()), // Insert new set if not found
             Occupied(entry) => entry.into_mut(),
         };
 

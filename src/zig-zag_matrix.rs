@@ -2,15 +2,20 @@
 // with the sorting indexes algorithm
 // explained in the discussion page
 // http://rosettacode.org/wiki/Talk:Zig-zag_matrix
+#![allow(unstable)]
 
-#[deriving(Show, PartialEq, Eq)]
+use std::iter::repeat;
+use std::cmp::Ordering;
+use std::cmp::Ordering::{Less, Equal, Greater};
+
+#[derive(Show, PartialEq, Eq)]
 struct SortIndex {
-    x:  uint,
-    y:  uint
+    x:  usize,
+    y:  usize
 }
 
 impl SortIndex {
-    fn new(x:uint, y:uint) -> SortIndex {
+    fn new(x: usize, y: usize) -> SortIndex {
         SortIndex{x:x, y:y}
     }
 }
@@ -43,11 +48,12 @@ impl Ord for SortIndex {
     }
 }
 
-fn zigzag(n:uint) -> Vec<Vec<uint>> {
-    let mut l:Vec<SortIndex> = range(0u, n*n).map(|i| SortIndex::new(i%n,i/n)).collect();
+fn zigzag(n: usize) -> Vec<Vec<usize>> {
+    let mut l: Vec<SortIndex> = (0us..n*n).map(|i| SortIndex::new(i%n,i/n)).collect();
     l.sort();
 
-    let mut result : Vec<Vec<uint>> = Vec::from_elem(n, Vec::from_elem(n,0u));
+	let init_vec = repeat(0us).take(n).collect(); // a vec of 0s 
+    let mut result : Vec<Vec<usize>> = repeat(init_vec).take(n).collect();
     for (i,&SortIndex{x,y}) in l.iter().enumerate() {
         result[y][x] = i
     }
@@ -56,7 +62,7 @@ fn zigzag(n:uint) -> Vec<Vec<uint>> {
 
 #[cfg(not(test))]
 fn main() {
-    println!("{}", zigzag(5));
+    println!("{:?}", zigzag(5));
 }
 
 #[test]

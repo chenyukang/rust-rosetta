@@ -1,5 +1,5 @@
 // Implements http://rosettacode.org/wiki/IBAN
-
+#![allow(unstable)]
 extern crate num;
 
 use num::bigint::{BigInt, ToBigInt};
@@ -30,38 +30,39 @@ fn is_valid(iban: &str) -> bool {
     };
 
     // Rearrange (first four characters go to the back)
-    for _ in range(0u, 4) {
-        let front = iban_chars.remove(0).unwrap();
+    for _ in (0us..4) {
+        let front = iban_chars.remove(0);
         iban_chars.push(front);
     }
 
     // Expand letters to digits
-    let iban_int = parse_digits(iban_chars);
+    let iban_int = parse_digits(&*iban_chars);
 
     // Check if the remainder is one
     match iban_int {
-        Some(x) => x % 97u.to_bigint().unwrap() == 1u.to_bigint().unwrap(),
+        Some(x) => x % 97us.to_bigint().unwrap() == 1us.to_bigint().unwrap(),
         None    => false
     }
 }
 
 // Returns a BigInt made from the digits and letters of the IBAN
-fn parse_digits(chars: Vec<char>) -> Option<BigInt> {
-    let mut vec = Vec::with_capacity(chars.len() + 10);
+fn parse_digits(chars: &[char]) -> Option<BigInt> {
+    let mut vec: Vec<u8> = Vec::with_capacity(chars.len() + 10);
 
     // Copy the digits to the vector and expand the letters to digits
-    // We convert the characters to Ascii to be able to transform the vector in a String directly
     for &c in chars.iter() {
         match c.to_digit(36) {
-            Some(d) => vec.extend(d.to_string().chars().map(|c| c.to_ascii())),
+            Some(d)	=> vec.extend(d.to_string().bytes()),
             None    => return None
-        };
+        }
     }
-
-    from_str(vec.into_string().as_slice())
+    let as_str = String::from_utf8(vec).unwrap(); // since it was built
+        // from digits we know the vec is all made of valid utf8, so we
+        // can just unwrap()
+    as_str.parse::<BigInt>()
 }
 
-fn country_length(country_code: &str) -> Option<uint> {
+fn country_length(country_code: &str) -> Option<usize> {
     let countries = [
         ("AL", 28),
         ("AD", 24),

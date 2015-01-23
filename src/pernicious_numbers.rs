@@ -1,4 +1,5 @@
 // http://rosettacode.org/wiki/Pernicious_numbers
+#![allow(unstable)]
 use std::iter::{count, Filter, Counter};
 use std::num::Int;
 use aks_test_for_primes::is_prime;
@@ -6,26 +7,22 @@ mod aks_test_for_primes;
 
 #[cfg(not(test))]
 fn main() {
-    for i in pernicious().take(25) {
-        print!("{} ", i);
-    }
+    for i in pernicious().take(25) { print!("{} " , i); }
     println!("");
-    for i in range(888_888_877u64, 888_888_888).filter(|&i| is_pernicious(i)) {
-        print!("{} ", i);
+    for i in (888_888_877u64..888_888_888).filter(is_pernicious) {
+        print!("{} " , i);
     }
 }
 
-fn pernicious<'a>() -> Filter<'a, u64, Counter<u64>> {
-    count(0u64, 1).filter(|&i| is_pernicious(i))
+fn pernicious() -> Filter<u64, Counter<u64>, fn(&u64) -> bool> {
+    count(0u64, 1).filter(is_pernicious as fn(&u64) -> bool)
 }
 
-fn is_pernicious(n: u64) -> bool {
-    is_prime(n.count_ones())
-}
+fn is_pernicious(n: &u64) -> bool { is_prime(n.count_ones()) }
 
 #[cfg(test)]
 mod test {
-    use super::{pernicious, is_pernicious};
+    use super::{is_pernicious, pernicious};
 
     #[test]
     fn pernicious_iter() {
@@ -39,7 +36,7 @@ mod test {
     #[test]
     fn is_pernicious_range() {
         let exp = &[888888877u64, 888888878, 888888880, 888888883, 888888885, 888888886];
-        for (act, &exp) in range(888_888_877u64, 888_888_888).filter(|&i| is_pernicious(i))
+        for (act, &exp) in (888_888_877u64..888_888_888).filter(is_pernicious)
             .zip(exp.iter()) {
              assert_eq!(act, exp);
         }
